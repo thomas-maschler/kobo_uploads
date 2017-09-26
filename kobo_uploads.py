@@ -3,6 +3,7 @@ import requests
 from requests.auth import HTTPBasicAuth
 import json
 from xml_editor import XMLEditor
+import uuid
 
 
 def get_kobo_data(dataset_id, auth_user, auth_passwd, host):
@@ -19,11 +20,12 @@ def post_kobo_data(auth_user, auth_passwd, host, f):
 
 
 host = "https://kc.kobotoolbox.org/api/v1/"
-dataset_id = 83693
+#dataset_id = 83693
 auth_user = "wcs_mtkb"
 auth_passwd = "Gorilla2017"
 new_form_id ="agtXX8E8PgfMieEsQXxkPX"
 new_form_version = "vjZAttUZmTLuvtb6iarc87"
+form_hubid = "a71c2cb9c161427090a97fbee6c45cde"
 
 # get the kobo data
 
@@ -43,7 +45,7 @@ for d in kobo_data:
     print file_name
 
     editor = XMLEditor(file_name, formid=new_form_id, version=new_form_version)
-    editor.formhub_uuid = d["formhub/uuid"]
+    editor.formhub_uuid = form_hubid # d["formhub/uuid"]
 
     editor.welcome = d["welcome"]
 
@@ -70,8 +72,8 @@ for d in kobo_data:
     except KeyError:
         pass
 
-    editor.instance_version = d["__version__"]
-    editor.instance_id = d["meta/instanceID"]
+    editor.instance_version = new_form_version #d["__version__"]
+    editor.instance_id = "uuid:{}".format(uuid.uuid1()) #d["meta/instanceID"]
 
     editor.finish()
 
@@ -79,4 +81,9 @@ for d in kobo_data:
 
 # Upload all files to Kobo
 for f in files:
+    with open(f, 'r') as myfile:
+        data = myfile.read().replace('<TEMP>', '').replace('</TEMP>', '')
+    with open(f, 'w') as myfile:
+        myfile.write(data)
+
     print post_kobo_data(auth_user, auth_passwd, host, f)
